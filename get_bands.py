@@ -1,3 +1,5 @@
+###### GET VIDEOS FROM SHEET AND GET SIMILAR BANDS FROM LASTFM AND SAVE THEM TO SHEET ######
+
 import config
 import pandas as pd
 import gspread_pandas as gspd
@@ -9,32 +11,38 @@ timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M')
 
 ###### READ and WRITE GOOGLE SHEET ######
 def sheet_connect(email,file,secret_file,timestamp):
-	# Spread öffnen
+	# open spread
 	spread = gspd.spread.Spread(file, config=gspd.conf.get_config(file_name=secret_file), user=email)
-	# Daten aus dem geöffneten Sheet in Dataframe laden
-	df_work = spread.sheet_to_df(index=0, header_rows=1, start_row=1)  
-	for index, row in df_work.iterrows():
-		if row['processed'] == '':
-			# extract bandname
-			if row['band'] == '':
-				bandname = extract_bandname(row['description'])
-				df_work.at[index,'band'] = bandname			
-			# check last.fm
-			similar_bands = check_lastfm(row['band'])
-			if similar_bands != {}:
-				# write similar bands
-				for band, name in enumerate(similar_bands, start=1):
-					df_work.at[index,'similar'+str(band)] = name
-					df_work.at[index,'similar'+str(band)+'_link'] = similar_bands[name]
-			# write timestamp
-			df_work.at[index,'processed'] = timestamp
+	
+	# loop through all the sheets in spread
+	for sheet in spread.sheets:
+		
+		# load data from sheet to df
+		df_work = spread.sheet_to_df(index=0, header_rows=1, start_row=1, sheet=sheet)  
+		# loop through all the rows
+		for index, row in df_work.iterrows():
+			if row['processed'] == '':
+				# extract bandname
+				if row['band'] == '':
+					bandname = extract_bandname(row['description'])
+					df_work.at[index,'band'] = bandname			
+				# check last.fm
+				similar_bands = check_lastfm(row['band'])
+				if similar_bands != {}:
+					# write similar bands
+					for band, name in enumerate(similar_bands, start=1):
+						df_work.at[index,'similar'+str(band)] = name
+						df_work.at[index,'similar'+str(band)+'_link'] = similar_bands[name]
+				# write timestamp
+				df_work.at[index,'processed'] = timestamp
 
-	# print dataframe and save to sheet
-	print(df_work)
-	try:
-		spread.df_to_sheet(df_work,index=False)
-	except:
-		print('could not write dataframe to sheet')
+		# print dataframe
+		print(f'Sheet {sheet}:\n{df_work}')
+		try:
+			#save to sheet
+			spread.df_to_sheet(df_work,index=False,sheet=sheet)
+		except:
+			print(f'FAIL: Could not write dataframe to sheet "{sheet}"')
 
 
 ###### EXTRACT BANDNAME ######

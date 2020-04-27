@@ -1,4 +1,6 @@
 email = ''
 file = ''
-sheet = ''
-secrets_file = ''
+secret_file = ''
+lastfm_key = ''
+playlist = ''
+yt_key = ''
