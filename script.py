@@ -1,0 +1,64 @@
+import config
+import pandas as pd
+import gspread_pandas as gspd
+import time
+import datetime
+from requests import get
+
+timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M')
+
+###### READ and WRITE GOOGLE SHEET ######
+def sheet_connect(email,file,secret_file,timestamp):
+	# Spread öffnen
+	spread = gspd.spread.Spread(file, config=gspd.conf.get_config(file_name=secret_file), user=email)
+	# Daten aus dem geöffneten Sheet in Dataframe laden
+	df_work = spread.sheet_to_df(index=0, header_rows=1, start_row=1)  
+	for index, row in df_work.iterrows():
+		if row['processed'] == '':
+			# extract bandname
+			if row['band'] == '':
+				bandname = extract_bandname(row['description'])
+				df_work.at[index,'band'] = bandname			
+			# check last.fm
+			similar_bands = check_lastfm(row['band'])
+			if similar_bands != {}:
+				# write similar bands
+				for band, name in enumerate(similar_bands, start=1):
+					df_work.at[index,'similar'+str(band)] = name
+					df_work.at[index,'similar'+str(band)+'_link'] = similar_bands[name]
+			# write timestamp
+			df_work.at[index,'processed'] = timestamp
+
+	# print dataframe and save to sheet
+	print(df_work)
+	try:
+		spread.df_to_sheet(df_work,index=False)
+	except:
+		print('could not write dataframe to sheet')
+
+
+###### EXTRACT BANDNAME ######
+def extract_bandname(description):
+	bandname = description.split(' - ')
+	return bandname[0].strip()
+
+###### CHECK LAST.FM ######
+def check_lastfm(bandname):
+	similar_bands = {}
+	r = get('http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist='+bandname+'&api_key='+config.lastfm_key+'&format=json')
+	jsonfile = r.json()
+	try:
+		for i in range(5):
+			name = jsonfile['similarartists']['artist'][i]['name']
+			url = jsonfile['similarartists']['artist'][i]['url']
+			similar_bands.update({name:url})
+	except:
+		similar_bands = {}
+	return similar_bands
+
+
+# execute
+print(f'email: {config.email}\nfile: {config.file}\nsecret file: {config.secret_file}')
+sheet_connect(config.email, config.file, config.secret_file, timestamp)
+
+
