@@ -24,7 +24,7 @@ def sheet_connect(email,file,secret_file,timestamp):
 			if row['processed'] == '':
 				# extract bandname
 				if row['band'] == '':
-					bandname = extract_bandname(row['description'])
+					bandname = extract_bandname(row['title'])
 					df_work.at[index,'band'] = bandname			
 				# check last.fm
 				similar_bands = check_lastfm(row['band'])
@@ -40,7 +40,7 @@ def sheet_connect(email,file,secret_file,timestamp):
 		print(f'Sheet {sheet}:\n{df_work}')
 		try:
 			#save to sheet
-			spread.df_to_sheet(df_work,index=False,sheet=sheet)
+			spread.df_to_sheet(df_work,headers=False,merge_headers=True,index=False,sheet=sheet)
 		except:
 			print(f'FAIL: Could not write dataframe to sheet "{sheet}"')
 
