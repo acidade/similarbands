@@ -7,14 +7,30 @@ import pandas as pd
 import gspread_pandas as gspd
 
 
-def get_yt_likes():
+def get_yt_likes(playlists=config.playlists,yt_key=config.yt_key,debug=0):
     
+    ###### PARSE VIDEOS ######
+    def parse_videos(page,df,response):
+        # loop through all videos
+        for item in response['items']:        
+            #put id, title, description into df
+            video_id = item['snippet']['resourceId']['videoId']
+            video_url = config.yt_baseurl + item['snippet']['resourceId']['videoId']
+            video_title = item['snippet']['title']
+            video_description = item['snippet']['description']
+            
+            df_video = pd.DataFrame.from_dict({'id':[video_id], 'url':[video_url], 'title':[video_title], 'description':[video_description]})
+            df = df.append(df_video, ignore_index=True)
+        return df
+    ###########################
+
+
     df = pd.DataFrame()
     baseurl = 'https://www.googleapis.com/youtube/v3/playlistItems?'
 
-    for playlist in config.playlist:
+    for playlist in playlists:
         loops = 0
-        params = 'part=snippet&maxResults=4&playlistId='+playlist+'&key='+config.yt_key
+        params = 'part=snippet&maxResults=4&playlistId='+playlist+'&key='+yt_key
         
         # get first page
         r = get(baseurl+params)
@@ -32,24 +48,8 @@ def get_yt_likes():
     return df
     
 
-def parse_videos(page,df,response):
-    # loop through all videos
-    for item in response['items']:        
-        
-        #put id, title, description into df
 
-        video_id = item['snippet']['resourceId']['videoId']
-        video_url = config.yt_baseurl + item['snippet']['resourceId']['videoId']
-        video_title = item['snippet']['title']
-        video_description = item['snippet']['description']
-
-        df_video = pd.DataFrame.from_dict({'id':[video_id], 'url':[video_url], 'title':[video_title], 'description':[video_description]})
-        df = df.append(df_video, ignore_index=True)
-    
-    return df
-
-
-def write_sheet(df,email,file,sheet_size,secret_file):
+def write_videosheet(df,email=config.email,file=config.file,sheet_size=config.sheet_size,secret_file=config.secret_file,debug=0):
     df_work = pd.DataFrame()
     df_sheet = pd.DataFrame()
 
@@ -60,7 +60,8 @@ def write_sheet(df,email,file,sheet_size,secret_file):
     for index, sheet in enumerate(spread.sheets, start=1):
         rows = len(sheet.col_values(1))
         sheet_count = len(spread.sheets)
-        print(f'Sheet: {sheet}, {rows} rows') # --> delete later
+        if debug == 1:
+            print(f'Sheet: {sheet}, {rows} rows in sheet')
         # if sheet is full but not last sheet
         if rows >= sheet_size and index < sheet_count:
             df_sheet = spread.sheet_to_df(index=0, header_rows=1, start_row=1, sheet=sheet)
@@ -81,33 +82,38 @@ def write_sheet(df,email,file,sheet_size,secret_file):
             df_work = df_work.append(df_sheet, ignore_index=True)
             spread.open_sheet(sheet.title, create=False)
 
-    print(f'arbeiten mit "{spread.sheet.title}"') # --> delete later
+    if debug == 1:
+        print(f'using sheet "{spread.sheet.title}"')
+
     sheet = spread.sheet
     # merge dataframes to remove duplicates: df_work are videos from sheet, df are youtube likes
     df_work = df.append(df_work, ignore_index=True)
     # remove duplicates by video id
     df_work.drop_duplicates('id',keep=False,inplace=True)
-    print(df_work)
+    
+    if debug == 1:
+        print(df_work)
+
     # remove all rows that are already processed
     df_work = df_work[df_work['processed'].isnull()]
     
 
-    # save to sheet
+    # save headers if it's a new sheet
     start_row = len(sheet.col_values(1))+1
     if start_row == 1:
         headers=True
     else:
         headers=False
 
+    if df_work.empty:
+        return False, 'DataFrame is empty, no new videos found'
+
+    # write to sheet
     try:
         spread.df_to_sheet(df_work,index=False,headers=headers,start=(start_row,1),sheet=sheet)
-        print('written to sheet') # --> delete later
-        return True
+        return True, f'Data written to sheet "{sheet.title}"'
     except:
-        print(f'FAIL: Could not write dataframe to sheet "{sheet}"') # --> delete later
-        return False
+        return False, 'Error while writing sheet'
     
 
-df = get_yt_likes()
-write_sheet(df,config.email,config.file,config.sheet_size,config.secret_file)
 

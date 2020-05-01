@@ -10,13 +10,33 @@ from requests import get
 timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M')
 
 ###### READ and WRITE GOOGLE SHEET ######
-def sheet_connect(email,file,secret_file,timestamp):
+def get_bands(email=config.email,file=config.file,secret_file=config.secret_file,timestamp=timestamp,debug=0):
+	
+	###### EXTRACT BANDNAME ######
+	def extract_bandname(description):
+		bandname = description.split(' - ')
+		return bandname[0].strip()
+	##############################
+
+	###### CHECK LAST.FM ######
+	def check_lastfm(bandname):
+		similar_bands = {}
+		r = get('http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist='+bandname+'&api_key='+config.lastfm_key+'&format=json')
+		jsonfile = r.json()
+		try:
+			for i in range(5):
+				name = jsonfile['similarartists']['artist'][i]['name']
+				url = jsonfile['similarartists']['artist'][i]['url']
+				similar_bands.update({name:url})
+		except:
+			similar_bands = {}
+		return similar_bands
+	###########################
+
 	# open spread
 	spread = gspd.spread.Spread(file, config=gspd.conf.get_config(file_name=secret_file), user=email)
-	
 	# loop through all the sheets in spread
 	for sheet in spread.sheets:
-		
 		# load data from sheet to df
 		df_work = spread.sheet_to_df(index=0, header_rows=1, start_row=1, sheet=sheet)  
 		# loop through all the rows
@@ -36,37 +56,20 @@ def sheet_connect(email,file,secret_file,timestamp):
 				# write timestamp
 				df_work.at[index,'processed'] = timestamp
 
-		# print dataframe
-		print(f'Sheet {sheet}:\n{df_work}')
+		# print dataframe in debug mode
+		if debug == 1:
+			print(f'Sheet {sheet}:\n{df_work}')
 		try:
 			#save to sheet
-			spread.df_to_sheet(df_work,headers=False,merge_headers=True,index=False,sheet=sheet)
+			spread.df_to_sheet(df_work,index=False,sheet=sheet)
+			return True, f'Similar bands written to sheet "{sheet.title}"'
 		except:
-			print(f'FAIL: Could not write dataframe to sheet "{sheet}"')
+			if debug == 1:
+				print(f'FAIL: Could not write dataframe to sheet "{sheet}"')
+			return False, f'Could not write similar bands to sheet "{sheet.title}"'
 
 
-###### EXTRACT BANDNAME ######
-def extract_bandname(description):
-	bandname = description.split(' - ')
-	return bandname[0].strip()
-
-###### CHECK LAST.FM ######
-def check_lastfm(bandname):
-	similar_bands = {}
-	r = get('http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist='+bandname+'&api_key='+config.lastfm_key+'&format=json')
-	jsonfile = r.json()
-	try:
-		for i in range(5):
-			name = jsonfile['similarartists']['artist'][i]['name']
-			url = jsonfile['similarartists']['artist'][i]['url']
-			similar_bands.update({name:url})
-	except:
-		similar_bands = {}
-	return similar_bands
 
 
-# execute
-print(f'email: {config.email}\nfile: {config.file}\nsecret file: {config.secret_file}')
-sheet_connect(config.email, config.file, config.secret_file, timestamp)
 
 
