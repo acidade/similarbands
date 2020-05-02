@@ -49,8 +49,8 @@ def get_yt_likes(playlists=config.playlists,yt_key=config.yt_key,debug=0):
     
 
 
-def write_videosheet(df,email=config.email,file=config.file,sheet_size=config.sheet_size,secret_file=config.secret_file,debug=0):
-    df_work = pd.DataFrame()
+def write_videosheet(df,email=config.email,file=config.file,sheet_size=config.sheet_size,secret_file=config.secret_file,col_names=config.col_names,debug=0):
+    df_work = pd.DataFrame(columns=col_names)
     df_sheet = pd.DataFrame()
 
     # open spread
