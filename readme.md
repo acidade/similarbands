@@ -1,9 +1,19 @@
-# find similar bands
+# Find similar bands
 
-This script checks a Google Spreadsheet for new entries of YouTube videos. It reads the bands from this spreadsheet and checks via last.fm for similar bands. Similar bands are saved back to the spreadsheet.
+This script checks public YouTube playlists for videos and writes them to a Google Spreadsheet. It then tries to extract the artist name, looks for similar artists on last.fm and writes the top 5 similar artists back to the sheet.
 
-### Installing
+### Installation
 
-* Install all the dependencies in the requirements file.
-* Rename config_edit.py file to config.py and define variables email (your email address with access to the Google Spreadsheet), file (the name of your google sheets file) and secret_file (full path location of your google secrets file, see https://pypi.org/project/gspread-pandas/ for more info)
-* 
+* Install all the Python dependencies in the requirements file
+* Rename config_edit.py file to config.py and set all the variables
+* See https://pypi.org/project/gspread-pandas/#client-credentials for more info on Google client credentials (secret_file variable, necessary for access to your spreadsheet)
+* See https://www.last.fm/api/ for more info on last.fm API key
+* Execute run.py
+
+### Notes
+
+At the moment this only works if the video titel contains only the artist name or data in the format "artist name - something something". The script is looking for " - " as separator after the artist name.
+
+### Coming soon
+
+Some analytics about number of artists, most recommended artists, etc.
