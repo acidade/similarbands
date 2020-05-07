@@ -1,4 +1,5 @@
 *.json
+*.log
 config.py
 google_secret.json
 data
