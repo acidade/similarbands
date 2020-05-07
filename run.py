@@ -1,26 +1,50 @@
 import get_videos
 import get_bands
+import os
+import logging
 
-print('---- START ----')
+logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
+
+log = logging.getLogger(__name__)
+
+message = f'---- START: {get_bands.timestamp} ----'
+print(message)
+log.debug(message)
 
 # get videos from YouTube playlists
-print('Getting videos from YouTube...')
+message = f'Getting videos from YouTube...'
+print(message)
+log.debug(message)
+
 df = get_videos.get_yt_likes()
 videos = get_videos.write_videosheet(df)
 
 if videos[0] == True:
-	print(f'Step 1 SUCCESS: {videos[1]}')
+	message = f'Step 1 SUCCESS: {videos[1]}'
+	print(message)
+	log.debug(message)
 else:
-	print(f'Step 1 FAIL: {videos[1]}')
+	message = f'Step 1 FAIL: {videos[1]}'
+	print(message)
+	log.debug(message)
 
 
 # get similar bands (execute script)
-print('Getting similar bands from last.fm...')
+message = 'Getting similar bands from last.fm...'
+print(message)
+log.debug(message)
+
 bands = get_bands.get_bands()
 
 if bands[0]==True:
-	print(f'Step 2 SUCCESS: {bands[1]}')
+	message = f'Step 2 SUCCESS: {bands[1]}'
+	print(message)
+	log.debug(message)
 else:
-	print(f'Step 2 FAIL: {bands[1]}')
+	message = f'Step 2 FAIL: {bands[1]}'
+	print(message)
+	log.debug(message)
 
-print('---- DONE ----')
+message = '---- DONE ----'
+print(message)
+log.debug(message)
