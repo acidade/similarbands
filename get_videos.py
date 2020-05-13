@@ -5,7 +5,10 @@ from requests import get
 import math
 import pandas as pd
 import gspread_pandas as gspd
+import logging
 
+logging.basicConfig(filename='similarbands.log', level=logging.INFO, format='%(levelname)s:%(name)s:%(asctime)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+log = logging.getLogger(__name__)
 
 def get_yt_likes(playlists=config.playlists,yt_key=config.yt_key,debug=0):
     
@@ -60,8 +63,7 @@ def write_videosheet(df,email=config.email,file=config.file,sheet_size=config.sh
     for index, sheet in enumerate(spread.sheets, start=1):
         rows = len(sheet.col_values(1))
         sheet_count = len(spread.sheets)
-        if debug == 1:
-            print(f'Sheet: {sheet}, {rows} rows in sheet')
+        log.info(f'Sheet: {sheet}, {rows} rows in sheet')
         # if sheet is full but not last sheet
         if rows >= sheet_size and index < sheet_count:
             df_sheet = spread.sheet_to_df(index=0, header_rows=1, start_row=1, sheet=sheet)
@@ -82,8 +84,7 @@ def write_videosheet(df,email=config.email,file=config.file,sheet_size=config.sh
             df_work = df_work.append(df_sheet, ignore_index=True)
             spread.open_sheet(sheet.title, create=False)
 
-    if debug == 1:
-        print(f'using sheet "{spread.sheet.title}"')
+    log.info(f'using sheet "{spread.sheet.title}"')
 
     sheet = spread.sheet
     # merge dataframes to remove duplicates: df_work are videos from sheet, df are youtube likes

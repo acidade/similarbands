@@ -6,8 +6,12 @@ import gspread_pandas as gspd
 import time
 import datetime
 from requests import get
+import logging
 
 timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M')
+
+logging.basicConfig(filename='similarbands.log', level=logging.INFO, format='%(levelname)s:%(name)s:%(asctime)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+log = logging.getLogger(__name__)
 
 ###### READ and WRITE GOOGLE SHEET ######
 def get_bands(email=config.email,file=config.file,secret_file=config.secret_file,timestamp=timestamp,debug=0):

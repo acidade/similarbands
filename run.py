@@ -3,7 +3,6 @@ import get_bands
 import logging
 
 logging.basicConfig(filename='similarbands.log', level=logging.INFO, format='%(levelname)s:%(name)s:%(asctime)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-
 log = logging.getLogger(__name__)
 
 message = f'---- START: {get_bands.timestamp} ----'
