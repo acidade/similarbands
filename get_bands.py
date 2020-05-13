@@ -7,6 +7,7 @@ import time
 import datetime
 from requests import get
 import logging
+import urllib.parse
 
 timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M')
 
@@ -25,6 +26,7 @@ def get_bands(email=config.email,file=config.file,secret_file=config.secret_file
 	###### CHECK LAST.FM ######
 	def check_lastfm(bandname):
 		similar_bands = {}
+		bandname = urllib.parse.quote_plus(bandname)
 		r = get('http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist='+bandname+'&api_key='+config.lastfm_key+'&format=json')
 		jsonfile = r.json()
 		try:
