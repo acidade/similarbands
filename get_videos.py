@@ -112,7 +112,7 @@ def write_videosheet(df,email=config.email,file=config.file,sheet_size=config.sh
     # write to sheet
     try:
         spread.df_to_sheet(df_work,index=False,headers=headers,start=(start_row,1),sheet=sheet)
-        return True, f'Data written to sheet "{sheet.title}"'
+        return True, f'{len(df_work.index)} bands written to sheet "{sheet.title}"'
     except:
         return False, 'Error while writing sheet'
     

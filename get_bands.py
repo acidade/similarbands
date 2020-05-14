@@ -33,7 +33,8 @@ def get_bands(email=config.email,file=config.file,secret_file=config.secret_file
 			for i in range(5):
 				name = jsonfile['similarartists']['artist'][i]['name']
 				url = jsonfile['similarartists']['artist'][i]['url']
-				similar_bands.update({name:url})
+				match = jsonfile['similarartists']['artist'][i]['match']
+				similar_bands.update({name:{'url':url,'match':match}})
 		except:
 			similar_bands = {}
 		return similar_bands
@@ -46,8 +47,10 @@ def get_bands(email=config.email,file=config.file,secret_file=config.secret_file
 		# load data from sheet to df
 		df_work = spread.sheet_to_df(index=0, header_rows=1, start_row=1, sheet=sheet)  
 		# loop through all the rows
+		bands_checked = 0
 		for index, row in df_work.iterrows():
 			if row['processed'] == '':
+				bands_checked += 1
 				# extract bandname
 				if row['band'] == '':
 					bandname = extract_bandname(row['title'])
@@ -58,7 +61,8 @@ def get_bands(email=config.email,file=config.file,secret_file=config.secret_file
 					# write similar bands
 					for band, name in enumerate(similar_bands, start=1):
 						df_work.at[index,'similar'+str(band)] = name
-						df_work.at[index,'similar'+str(band)+'_link'] = similar_bands[name]
+						df_work.at[index,'similar'+str(band)+'_link'] = similar_bands[name]['url']
+						df_work.at[index,'similar'+str(band)+'_match'] = similar_bands[name]['match']
 				# write timestamp
 				df_work.at[index,'processed'] = timestamp
 
@@ -68,7 +72,7 @@ def get_bands(email=config.email,file=config.file,secret_file=config.secret_file
 		try:
 			#save to sheet
 			spread.df_to_sheet(df_work,index=False,sheet=sheet)
-			return True, f'Similar bands written to sheet "{sheet.title}"'
+			return True, f'{bands_checked} bands checked. Similar bands written to sheet "{sheet.title}"'
 		except:
 			if debug == 1:
 				print(f'FAIL: Could not write dataframe to sheet "{sheet}"')
